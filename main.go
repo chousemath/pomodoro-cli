@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -17,44 +16,9 @@ type dbJSON struct {
 }
 
 func main() {
-	breakType := flag.String(
-		"break",
-		"short",
-		"How long of a break will you take after this work cycle?",
-	)
-
-	flag.Parse()
-
-	breakTime := 5
-	if *breakType == "long" {
-		breakTime = 15
-	}
-
 	db := loadDB()
-
-	notify(
-		"Pomodoro timer started, work hard!",
-		fmt.Sprintf(
-			"Concentrate Jo, you currently have %d check%s.",
-			db.Checks,
-			pluralize(db.Checks),
-		),
-	)
-
-	// original pomodoro technique suggests a 25 min work cycle
-	time.Sleep(25 * time.Minute)
-
-	db.Checks++
-	notify(
-		"Time to take a walk!",
-		fmt.Sprintf(
-			"Take a %d minute break. You now have %d check%s.",
-			breakTime,
-			db.Checks,
-			pluralize(db.Checks),
-		),
-	)
-
+	db.notifyAndSleep()
+	db.checkAndNotify()
 	db.save()
 }
 
@@ -93,6 +57,37 @@ func (db *dbJSON) save() {
 	}
 	defer jsonFile.Close()
 	jsonFile.Write(jsonData)
+}
+
+func (db *dbJSON) notifyAndSleep() {
+	notify(
+		"Pomodoro timer started, work hard!",
+		fmt.Sprintf(
+			"Concentrate Jo, you currently have %d check%s.",
+			db.Checks,
+			pluralize(db.Checks),
+		),
+	)
+	// original pomodoro technique suggests a 25 min work cycle
+	time.Sleep(25 * time.Minute)
+}
+
+func (db *dbJSON) checkAndNotify() {
+	db.Checks++
+	breakTime := 5
+	if db.Checks >= 4 {
+		db.Checks = 0
+		breakTime = 15
+	}
+	notify(
+		"Time to take a walk!",
+		fmt.Sprintf(
+			"Take a %d minute break. You now have %d check%s.",
+			breakTime,
+			db.Checks,
+			pluralize(db.Checks),
+		),
+	)
 }
 
 func pluralize(checkCount uint) string {
