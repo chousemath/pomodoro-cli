@@ -1,15 +1,22 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
 	"time"
 
 	"github.com/gen2brain/beeep"
 )
 
-func main() {
+type dbJSON struct {
+	Checks uint `json:"Checks"`
+}
 
+func main() {
 	breakType := flag.String(
 		"break",
 		"short",
@@ -23,25 +30,65 @@ func main() {
 		breakTime = 15
 	}
 
-	if err := beeep.Notify(
+	db := loadDB()
+
+	notify(
 		"Pomodoro timer started, work hard!",
-		"Concentrate and get shit done Jo, you will be rewarded with a break.",
-		"assets/clippy.png",
-	); err != nil {
-		panic(err)
-	}
+		fmt.Sprintf(
+			"Concentrate Jo, you currently have %d checks.",
+			db.Checks,
+		),
+	)
 
 	// original pomodoro technique suggests a 25 min work cycle
 	time.Sleep(25 * time.Minute)
 
-	if err := beeep.Notify(
+	db.Checks++
+	notify(
 		"Time to take a walk!",
 		fmt.Sprintf(
-			"Take a %d minute break. Make sure to make a check mark on your board.",
+			"Take a %d minute break. You now have %d checks.",
 			breakTime,
+			db.Checks,
 		),
-		"assets/clippy.png",
-	); err != nil {
+	)
+
+	db.save()
+}
+
+func notify(title, content string) {
+	if err := beeep.Notify(title, content, "assets/clippy.png"); err != nil {
 		panic(err)
 	}
+}
+
+func loadDB() *dbJSON {
+	dbFile, err := os.Open("./db.json")
+	if err != nil {
+		log.Fatal("Could not open the db file...")
+	}
+	defer dbFile.Close()
+	dbBytes, err := ioutil.ReadAll(dbFile)
+	if err != nil {
+		log.Fatal("Could not convert db file to bytes...")
+	}
+	// initialize database configuration
+	db := &dbJSON{}
+	if err = json.Unmarshal(dbBytes, db); err != nil {
+		log.Fatalf("Could not unmarshal db: %v", err)
+	}
+	return db
+}
+
+func (db *dbJSON) save() {
+	jsonData, err := json.Marshal(*db)
+	if err != nil {
+		panic(err)
+	}
+	jsonFile, err := os.Create("./db.json")
+	if err != nil {
+		panic(err)
+	}
+	defer jsonFile.Close()
+	jsonFile.Write(jsonData)
 }
