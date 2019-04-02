@@ -35,8 +35,9 @@ func main() {
 	notify(
 		"Pomodoro timer started, work hard!",
 		fmt.Sprintf(
-			"Concentrate Jo, you currently have %d checks.",
+			"Concentrate Jo, you currently have %d check%s.",
 			db.Checks,
+			pluralize(db.Checks),
 		),
 	)
 
@@ -47,9 +48,10 @@ func main() {
 	notify(
 		"Time to take a walk!",
 		fmt.Sprintf(
-			"Take a %d minute break. You now have %d checks.",
+			"Take a %d minute break. You now have %d check%s.",
 			breakTime,
 			db.Checks,
+			pluralize(db.Checks),
 		),
 	)
 
@@ -91,4 +93,11 @@ func (db *dbJSON) save() {
 	}
 	defer jsonFile.Close()
 	jsonFile.Write(jsonData)
+}
+
+func pluralize(checkCount uint) string {
+	if checkCount == 1 {
+		return ""
+	}
+	return "s"
 }
