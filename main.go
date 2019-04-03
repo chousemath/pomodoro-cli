@@ -35,6 +35,7 @@ const (
 
 func main() {
 	db := loadDB()
+	go sleepThenNotify(5)
 	db.notifyAndSleep()
 	if err := db.checkAndNotify(); err != nil {
 		log.Fatal(fmt.Sprintf("Error checking and notifying: %s", err.Error()))
@@ -100,10 +101,6 @@ func (db *dbJSON) notifyAndSleep() {
 			pluralize(db.Checks),
 		),
 	)
-	// go sleepThenNotify(5)
-	// go sleepThenNotify(10)
-	// go sleepThenNotify(15)
-	// go sleepThenNotify(20)
 	// original pomodoro technique suggests a 25 min work cycle
 	time.Sleep(25 * time.Minute)
 }
