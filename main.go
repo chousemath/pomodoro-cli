@@ -9,16 +9,36 @@ import (
 	"time"
 
 	"github.com/gen2brain/beeep"
+	"github.com/gen2brain/dlgs"
 )
 
-type dbJSON struct {
-	Checks uint `json:"Checks"`
+type goal struct {
+	Description string `json:"Description"`
+	CompletedAt int64  `json:"CompletedAt"`
 }
+
+type dbJSON struct {
+	Checks         uint   `json:"Checks"`
+	Sessions       uint   `json:"Sessions"`
+	GoalComplete   uint   `json:"GoalComplete"`
+	GoalIncomplete uint   `json:"GoalIncomplete"`
+	GoalList       []goal `json:"GoalList"`
+	UpdatedAt      int64  `json:"UpdatedAt"`
+}
+
+const (
+	// Yes indicates that a goal has been completed during the Pomodoro interval
+	Yes string = "Yes, I finished my goal."
+	// No indicates that I was unable to complete a goal during the interval
+	No string = "No, I was unable to finish."
+)
 
 func main() {
 	db := loadDB()
 	db.notifyAndSleep()
-	db.checkAndNotify()
+	if err := db.checkAndNotify(); err != nil {
+		log.Fatal(fmt.Sprintf("Error checking and notifying: %s", err.Error()))
+	}
 	db.save()
 }
 
@@ -47,6 +67,7 @@ func loadDB() *dbJSON {
 }
 
 func (db *dbJSON) save() {
+	db.UpdatedAt = time.Now().Unix()
 	jsonData, err := json.Marshal(*db)
 	if err != nil {
 		panic(err)
@@ -59,6 +80,17 @@ func (db *dbJSON) save() {
 	jsonFile.Write(jsonData)
 }
 
+func sleepThenNotify(sleepDuration int64) {
+	time.Sleep(time.Duration(sleepDuration) * time.Minute)
+	notify(
+		"Keep it going!",
+		fmt.Sprintf(
+			"You have %d minutes left in this session.",
+			25-sleepDuration,
+		),
+	)
+}
+
 func (db *dbJSON) notifyAndSleep() {
 	notify(
 		"Pomodoro timer started, work hard!",
@@ -68,16 +100,24 @@ func (db *dbJSON) notifyAndSleep() {
 			pluralize(db.Checks),
 		),
 	)
+	// go sleepThenNotify(5)
+	// go sleepThenNotify(10)
+	// go sleepThenNotify(15)
+	// go sleepThenNotify(20)
 	// original pomodoro technique suggests a 25 min work cycle
 	time.Sleep(25 * time.Minute)
 }
 
-func (db *dbJSON) checkAndNotify() {
+func (db *dbJSON) checkAndNotify() error {
 	db.Checks++
+	db.Sessions++
 	breakTime := 5
 	if db.Checks >= 4 {
 		db.Checks = 0
 		breakTime = 15
+	}
+	if err := db.checkGoal(); err != nil {
+		return err
 	}
 	notify(
 		"Time to take a walk!",
@@ -88,6 +128,37 @@ func (db *dbJSON) checkAndNotify() {
 			pluralize(db.Checks),
 		),
 	)
+	return nil
+}
+
+func (db *dbJSON) checkGoal() error {
+	answer, _, err := dlgs.List(
+		"Goal Finished?",
+		"Select an answer from the list:",
+		[]string{Yes, No},
+	)
+	if err != nil {
+		return err
+	}
+
+	switch answer {
+	case Yes:
+		db.GoalComplete++
+		goalDesc, _, err := dlgs.Password("Description", "Describe your goal:")
+		if err != nil {
+			panic(err)
+		}
+		db.GoalList = append(
+			db.GoalList,
+			goal{
+				Description: goalDesc,
+				CompletedAt: time.Now().Unix(),
+			},
+		)
+	case No:
+		db.GoalIncomplete++
+	}
+	return nil
 }
 
 func pluralize(checkCount uint) string {
