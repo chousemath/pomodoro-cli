@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -23,6 +24,7 @@ type dbJSON struct {
 	GoalComplete   uint   `json:"GoalComplete"`
 	GoalIncomplete uint   `json:"GoalIncomplete"`
 	GoalList       []goal `json:"GoalList"`
+	FailureReasons []goal `json:"FailureReasons"`
 	UpdatedAt      int64  `json:"UpdatedAt"`
 }
 
@@ -34,7 +36,14 @@ const (
 )
 
 func main() {
+	resetChecks := flag.Bool("reset", false, "Indicates that you want the check count to be reset")
+	flag.Parse()
+
 	db := loadDB()
+	if *resetChecks {
+		db.Checks = 0
+	}
+
 	go sleepThenNotify(5)
 	db.notifyAndSleep()
 	if err := db.checkAndNotify(); err != nil {
@@ -154,6 +163,17 @@ func (db *dbJSON) checkGoal() error {
 		)
 	case No:
 		db.GoalIncomplete++
+		failureDesc, _, err := dlgs.Password("Description", "Describe what went wrong:")
+		if err != nil {
+			panic(err)
+		}
+		db.FailureReasons = append(
+			db.FailureReasons,
+			goal{
+				Description: failureDesc,
+				CompletedAt: time.Now().Unix(),
+			},
+		)
 	}
 	return nil
 }

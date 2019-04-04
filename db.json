@@ -1,1 +1,26 @@
-{"Checks":3,"Sessions":7,"GoalComplete":3,"GoalIncomplete":4,"GoalList":[{"Description":"My goal was to add a decent amount of images to the test image suite","CompletedAt":1554266584},{"Description":"My goal was to remove all crap photos from a recently scraped folder of images 9999_hyundai_sonata_lf","CompletedAt":1554274012},{"Description":"My goal was to scrape another group of images (sonata) and edited the test script to track exactly whch make/model combinations are failing","CompletedAt":1554278385}],"UpdatedAt":1554278385}
+{
+  "Checks": 1,
+  "Sessions": 9,
+  "GoalComplete": 4,
+  "GoalIncomplete": 5,
+  "FailureReasons": [],
+  "GoalList": [
+    {
+      "Description": "My goal was to add a decent amount of images to the test image suite",
+      "CompletedAt": 1554266584
+    },
+    {
+      "Description": "My goal was to remove all crap photos from a recently scraped folder of images 9999_hyundai_sonata_lf",
+      "CompletedAt": 1554274012
+    },
+    {
+      "Description": "My goal was to scrape another group of images (sonata) and edited the test script to track exactly whch make/model combinations are failing",
+      "CompletedAt": 1554278385
+    },
+    {
+      "Description": "My goal was to clean up some more hyundai sonata hybrid image data and add it to the vehicle_photos directory, and to scrape encar for images of hyundai tuscon",
+      "CompletedAt": 1554281586
+    }
+  ],
+  "UpdatedAt": 1554357700
+}
