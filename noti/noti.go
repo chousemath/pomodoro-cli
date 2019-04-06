@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/chousemath/pomodoro-cli/pomodoro"
-
 	"github.com/gen2brain/beeep"
 )
 
@@ -16,13 +14,15 @@ func Notify(header, body string) {
 	}
 }
 
-func sleepThenNotify(sleepDuration int64) {
+// SleepThenNotify sleeps for a certain amount of time, and then creates
+// a desktop notification
+func SleepThenNotify(sleepDuration, pomSessLen int64) {
 	time.Sleep(time.Duration(sleepDuration) * time.Minute)
 	Notify(
 		"Keep it going!",
 		fmt.Sprintf(
 			"You have %d minutes left in this session.",
-			pomodoro.SessionLength-sleepDuration,
+			pomSessLen-sleepDuration,
 		),
 	)
 }
