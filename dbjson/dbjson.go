@@ -1,3 +1,5 @@
+// dbjson contains all of the code that interacts directly with the json database
+
 package dbjson
 
 import (
@@ -86,7 +88,7 @@ func (db *DBJSON) NotifyAndSleep(sleepDuration int64) {
 
 // CheckAndNotify creates a virtual check mark as per the Pomodoro
 // technique, then notifies the user of their well-earned break
-func (db *DBJSON) CheckAndNotify() error {
+func (db *DBJSON) CheckAndNotify(goalText string) error {
 	db.Checks++
 	db.Sessions++
 	breakTime := 5
@@ -94,7 +96,7 @@ func (db *DBJSON) CheckAndNotify() error {
 		db.Checks = 0
 		breakTime = 15
 	}
-	if err := db.checkGoal(); err != nil {
+	if err := db.checkGoal(goalText); err != nil {
 		return err
 	}
 	noti.Notify(
@@ -109,7 +111,7 @@ func (db *DBJSON) CheckAndNotify() error {
 	return nil
 }
 
-func (db *DBJSON) checkGoal() error {
+func (db *DBJSON) checkGoal(goalText string) error {
 	answer, _, err := dlgs.List(
 		"Goal Finished?",
 		"Select an answer from the list:",
@@ -122,14 +124,16 @@ func (db *DBJSON) checkGoal() error {
 	switch answer {
 	case Yes:
 		db.GoalComplete++
-		goalDesc, _, err := dlgs.Password("Description", "Describe your goal:")
-		if err != nil {
-			panic(err)
+		if goalText == "" {
+			goalText, _, err = dlgs.Password("Description", "Describe your goal:")
+			if err != nil {
+				panic(err)
+			}
 		}
 		db.GoalList = append(
 			db.GoalList,
 			goal{
-				Description: goalDesc,
+				Description: goalText,
 				CompletedAt: time.Now().Unix(),
 			},
 		)
