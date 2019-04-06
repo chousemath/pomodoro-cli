@@ -24,7 +24,11 @@ func main() {
 		*pomSessLen = pomodoro.SessionLength
 	}
 
-	go noti.SleepThenNotify(5, *pomSessLen)
+	// update the user on a 5 minute interval
+	for i := int64(5); i < *pomSessLen; i += 5 {
+		go noti.SleepThenNotify(i, *pomSessLen)
+	}
+
 	db.NotifyAndSleep(*pomSessLen)
 	if err := db.CheckAndNotify(*goalText); err != nil {
 		log.Fatal(fmt.Sprintf("Error checking and notifying: %s", err.Error()))
