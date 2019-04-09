@@ -17,8 +17,13 @@ import (
 )
 
 func main() {
-	resetChecks := flag.Bool("reset", false, "Indicates that you want the check count to be reset")
-	pomSessLen := flag.Int64("length", 0, "Indicates how long you want this session to be")
+	resetHelp := "Indicates that you want the check count to be reset"
+	resetChecks := flag.Bool("reset", false, resetHelp)
+	resetChecksShort := flag.Bool("r", false, resetHelp)
+
+	pomSessLenHelp := "Indicates how long you want this session to be"
+	pomSessLen := flag.Int64("length", 0, pomSessLenHelp)
+	pomSessLenShort := flag.Int64("l", 0, pomSessLenHelp)
 
 	goalHelp := "The text content of your goal"
 	goalText := flag.String("goal", "", goalHelp)
@@ -31,8 +36,13 @@ func main() {
 	flag.Parse()
 
 	db := dbjson.LoadDB()
-	if *resetChecks {
+
+	if *resetChecks || *resetChecksShort {
 		db.Checks = 0
+	}
+
+	if *pomSessLen == 0 && *pomSessLenShort != 0 {
+		*pomSessLen = *pomSessLenShort
 	}
 	if *pomSessLen == 0 {
 		*pomSessLen = pomodoro.SessionLength
