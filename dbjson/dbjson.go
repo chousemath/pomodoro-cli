@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/chousemath/pomodoro-cli/noti"
@@ -55,6 +56,13 @@ func LoadDB() *DBJSON {
 		log.Fatalf("Could not unmarshal db: %v", err)
 	}
 	return db
+}
+
+// SortGoals sorts the goals in the database (most recent first)
+func (db *DBJSON) SortGoals() {
+	sort.Slice(db.GoalList, func(i, j int) bool {
+		return db.GoalList[i].CompletedAt > db.GoalList[j].CompletedAt
+	})
 }
 
 // Save records the user's progress by writing the user's state to a JSON file
