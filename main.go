@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/chousemath/pomodoro-cli/dbjson"
 	"github.com/chousemath/pomodoro-cli/noti"
@@ -17,8 +19,15 @@ import (
 func main() {
 	resetChecks := flag.Bool("reset", false, "Indicates that you want the check count to be reset")
 	pomSessLen := flag.Int64("length", 0, "Indicates how long you want this session to be")
-	goalText := flag.String("goal", "", "The text content of your goal")
-	isServer := flag.Bool("server", false, "Indicates whether or not you want to run the Pomodoro server")
+
+	goalHelp := "The text content of your goal"
+	goalText := flag.String("goal", "", goalHelp)
+	goalTextShort := flag.String("g", "", goalHelp)
+
+	isServerHelp := "Indicates whether or not you want to run the Pomodoro server"
+	isServer := flag.Bool("server", false, isServerHelp)
+	isServerShort := flag.Bool("s", false, isServerHelp)
+
 	flag.Parse()
 
 	db := dbjson.LoadDB()
@@ -29,8 +38,29 @@ func main() {
 		*pomSessLen = pomodoro.SessionLength
 	}
 
-	if *isServer {
+	if *isServer || *isServerShort {
 		r := mux.NewRouter()
+		r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			setHeaderHTML(&w)
+
+			var goals strings.Builder
+			goals.WriteString("<h3>My Past Goals</h3>")
+			goals.WriteString("<ul>")
+			db.SortGoals()
+			for _, goal := range db.GoalList {
+				goals.WriteString("<li>")
+				goals.WriteString("<b>")
+				unixTimeUTC := time.Unix(goal.CompletedAt, 0) //gives unix time stamp in utc
+				goals.WriteString(unixTimeUTC.Format(time.RFC3339))
+				goals.WriteString("</b>")
+				goals.WriteString(" - ")
+				goals.WriteString(goal.Description)
+				goals.WriteString("</li>")
+			}
+			goals.WriteString("</ul>")
+
+			fmt.Fprintf(w, goals.String())
+		}).Methods("GET")
 		log.Fatal(http.ListenAndServe(":3000", handlers.LoggingHandler(os.Stdout, r)))
 	}
 
@@ -40,8 +70,17 @@ func main() {
 	}
 
 	db.NotifyAndSleep(*pomSessLen)
+
+	if *goalText == "" && *goalTextShort != "" {
+		*goalText = *goalTextShort
+	}
+
 	if err := db.CheckAndNotify(*goalText); err != nil {
 		log.Fatal(fmt.Sprintf("Error checking and notifying: %s", err.Error()))
 	}
 	db.Save()
+}
+
+func setHeaderHTML(w *http.ResponseWriter) {
+	(*w).Header().Set("Content-Type", "text/html; charset=utf-8")
 }
