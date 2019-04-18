@@ -7,11 +7,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/chousemath/pomodoro-cli/cors"
 	"github.com/chousemath/pomodoro-cli/dbjson"
 	"github.com/chousemath/pomodoro-cli/noti"
 	"github.com/chousemath/pomodoro-cli/pomodoro"
+	"github.com/chousemath/pomodoro-cli/stredit"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
@@ -57,23 +59,29 @@ func main() {
 		r.HandleFunc("/db", func(w http.ResponseWriter, r *http.Request) {
 			cors.CORS(&w)
 			db.SortGoals()
-			// for _, goal := range db.GoalList {
-			// 	unixTimeUTC := time.Unix(goal.CompletedAt, 0) //gives unix time stamp in utc
-			// 	goals.WriteString(unixTimeUTC.Format(time.RFC3339))
-			// 	goals.WriteString(goal.Description)
-			// }
 			json.NewEncoder(w).Encode(db)
 		}).Methods("GET")
 
 		log.Fatal(http.ListenAndServe(":3000", handlers.LoggingHandler(os.Stdout, r)))
 	}
 
-	// update the user on a 5 minute interval.
-	for i := int64(5); i < *pomSessLen; i += 5 {
-		go noti.SleepThenNotify(i, *pomSessLen)
+	var wg sync.WaitGroup
+	// update the user on a 1 minute interval.
+	for i := int64(5); i <= *pomSessLen; i++ {
+		wg.Add(1)
+		go noti.SleepThenNotify(i, *pomSessLen, &wg)
 	}
 
-	db.NotifyAndSleep(*pomSessLen)
+	noti.Notify(
+		"Pomodoro timer started, work hard!",
+		fmt.Sprintf(
+			"Concentrate Jo, you currently have %d check%s.",
+			db.Checks,
+			stredit.Pluralize(db.Checks),
+		),
+	)
+
+	wg.Wait()
 
 	if *goalText == "" && *goalTextShort != "" {
 		*goalText = *goalTextShort

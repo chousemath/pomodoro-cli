@@ -2,6 +2,7 @@ package noti
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/gen2brain/beeep"
@@ -16,7 +17,8 @@ func Notify(header, body string) {
 
 // SleepThenNotify sleeps for a certain amount of time, and then creates
 // a desktop notification
-func SleepThenNotify(sleepDuration, pomSessLen int64) {
+func SleepThenNotify(sleepDuration, pomSessLen int64, wg *sync.WaitGroup) {
+	defer (*wg).Done()
 	time.Sleep(time.Duration(sleepDuration) * time.Minute)
 	Notify(
 		"Keep it going!",

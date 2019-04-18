@@ -80,20 +80,6 @@ func (db *DBJSON) Save() {
 	jsonFile.Write(jsonData)
 }
 
-// NotifyAndSleep creates a desktop notification and then sleeps
-func (db *DBJSON) NotifyAndSleep(sleepDuration int64) {
-	noti.Notify(
-		"Pomodoro timer started, work hard!",
-		fmt.Sprintf(
-			"Concentrate Jo, you currently have %d check%s.",
-			db.Checks,
-			stredit.Pluralize(db.Checks),
-		),
-	)
-	// original pomodoro technique suggests a 25 min work cycle
-	time.Sleep(time.Duration(sleepDuration) * time.Minute)
-}
-
 // CheckAndNotify creates a virtual check mark as per the Pomodoro
 // technique, then notifies the user of their well-earned break
 func (db *DBJSON) CheckAndNotify(goalText string) error {
