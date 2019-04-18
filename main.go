@@ -49,6 +49,9 @@ func main() {
 	if *pomSessLen == 0 {
 		*pomSessLen = pomodoro.SessionLength
 	}
+	if *pomSessLen < 1 {
+		log.Fatal("Length of the Pomodoro session cannot be less than 1 minute")
+	}
 
 	if *isServer || *isServerShort {
 		r := mux.NewRouter()
@@ -67,7 +70,7 @@ func main() {
 
 	var wg sync.WaitGroup
 	// update the user on a 1 minute interval.
-	for i := int64(5); i <= *pomSessLen; i++ {
+	for i := int64(1); i <= *pomSessLen; i++ {
 		wg.Add(1)
 		go noti.SleepThenNotify(i, *pomSessLen, &wg)
 	}
