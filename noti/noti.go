@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/chousemath/pomodoro-cli/clear"
 	"github.com/gen2brain/beeep"
 )
 
@@ -20,11 +21,11 @@ func Notify(header, body string) {
 func SleepThenNotify(sleepDuration, pomSessLen int64, wg *sync.WaitGroup) {
 	defer (*wg).Done()
 	time.Sleep(time.Duration(sleepDuration) * time.Minute)
-	Notify(
-		"Keep it going!",
-		fmt.Sprintf(
-			"You have %d minutes left in this session.",
-			pomSessLen-sleepDuration,
-		),
+	msg := fmt.Sprintf(
+		"You have %d minutes left in this session.",
+		pomSessLen-sleepDuration,
 	)
+	Notify("Keep it going!", msg)
+	clear.Execute()
+	fmt.Println(msg)
 }
